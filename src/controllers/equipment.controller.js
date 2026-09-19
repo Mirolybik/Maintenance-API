@@ -18,6 +18,13 @@ export const updateEquipment = catchAsync(async (req, res) => {
   res.json(await EquipmentService.update(req.params.id, req.body));
 });
 
+import { WeatherService } from "../services/weather.service.js";
+export const getWeather = catchAsync(async (req, res) => {
+  const eq = await EquipmentService.getById(req.params.id);
+  const weather = await WeatherService.getForecast(eq.location.lat, eq.location.lon);
+  res.json(weather);
+});
+
 export const deleteEquipment = catchAsync(async (req, res) => {
   await EquipmentService.delete(req.params.id);
   res.status(204).send();
