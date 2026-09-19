@@ -27,6 +27,10 @@ export const EquipmentService = {
   },
   delete: async (id) => {
     await EquipmentService.getById(id);
+    const { RequestRepo } = await import("../repositories/request.repo.js");
+    const reqs = await RequestRepo.findByEquipment(id);
+    if (reqs.some(r => r.status === "new" || r.status === "in_progress")) throw new ConflictError("Нельзя удалить оборудование с открытыми заявками");
+
     await EquipmentRepo.delete(id);
   }
 };

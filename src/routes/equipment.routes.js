@@ -10,4 +10,7 @@ router.get('/:id', validate(V.getEquipmentSchema), Ctrl.getEquipment);
 router.patch('/:id', validate(V.updateEquipmentSchema), Ctrl.updateEquipment);
 router.delete('/:id', validate(V.getEquipmentSchema), Ctrl.deleteEquipment);
 
+import * as ReqCtrl from "../controllers/request.controller.js";
+router.get("/:id/requests", validate(V.getEquipmentSchema), ReqCtrl.getByEquip);
+
 export default router;

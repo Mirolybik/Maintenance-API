@@ -25,6 +25,9 @@ app.use(rateLimit({
 
 app.use(express.json({ limit: '100kb' }));
 
+import requestRoutes from "./routes/request.routes.js";
+app.use("/api/requests", requestRoutes);
+
 import equipmentRoutes from "./routes/equipment.routes.js";
 app.use("/api/equipment", equipmentRoutes);
 
