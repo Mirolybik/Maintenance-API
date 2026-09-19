@@ -31,6 +31,8 @@ app.use("/api/requests", requestRoutes);
 import equipmentRoutes from "./routes/equipment.routes.js";
 app.use("/api/equipment", equipmentRoutes);
 
+app.use(express.static("public"));
+
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use((req, res, next) => next(new NotFoundError('Маршрут не найден')));
