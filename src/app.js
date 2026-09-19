@@ -25,6 +25,9 @@ app.use(rateLimit({
 
 app.use(express.json({ limit: '100kb' }));
 
+import equipmentRoutes from "./routes/equipment.routes.js";
+app.use("/api/equipment", equipmentRoutes);
+
 app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 app.use((req, res, next) => next(new NotFoundError('Маршрут не найден')));
