@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "Maintenance API (Case 2)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Equipment",
+      "item": [
+        {
+          "name": "Создать оборудование (Успех 201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });",
+                  "var data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set(\"equipId\", data.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/equipment",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ветряк 1\",\n  \"type\": \"turbine\",\n  \"serialNumber\": \"SN-001\",\n  \"location\": { \"lat\": 55.7, \"lon\": 37.6 },\n  \"status\": \"operational\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "Ошибка валидации 422 (Лишнее поле)",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/equipment",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ветряк 1\",\n  \"type\": \"turbine\",\n  \"serialNumber\": \"SN-001\",\n  \"location\": { \"lat\": 55.7, \"lon\": 37.6 },\n  \"status\": \"operational\",\n  \"foo\": \"bar\"\n}" }
+              },
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "body": "{\n    \"error\": {\n        \"code\": \"VALIDATION_ERROR\",\n        \"message\": \"Некорректные данные запроса\",\n        \"details\": [\n            {\n                \"field\": \"body.foo\",\n                \"message\": \"Unrecognized key(s) in object: 'foo'\"\n            }\n        ],\n        \"requestId\": \"a1b2c3d4\"\n    }\n}"
+            },
+            {
+              "name": "Сломанный JSON 400",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/equipment",
+                "header": [ { "key": "Content-Type", "value": "application/json" } ],
+                "body": { "mode": "raw", "raw": "{\"name\": \"Ветряк 1\"" }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "body": "{\n    \"error\": {\n        \"code\": \"BAD_REQUEST\",\n        \"message\": \"Некорректный синтаксис JSON\",\n        \"requestId\": \"a1b2c3d4\"\n    }\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "equipId", "value": "" }
+  ]
+}
