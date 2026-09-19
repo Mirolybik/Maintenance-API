@@ -13,4 +13,6 @@ router.delete('/:id', validate(V.getEquipmentSchema), Ctrl.deleteEquipment);
 import * as ReqCtrl from "../controllers/request.controller.js";
 router.get("/:id/requests", validate(V.getEquipmentSchema), ReqCtrl.getByEquip);
 
+router.get("/:id/weather", validate(V.getEquipmentSchema), Ctrl.getWeather);
+
 export default router;
