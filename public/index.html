@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>API Client</title></head>
+<body>
+  <h2>Статус API: <span id="status">Загрузка...</span></h2>
+  <script>
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(d => document.getElementById('status').innerText = d.status)
+      .catch(() => document.getElementById('status').innerText = 'Ошибка');
+  </script>
+</body>
+</html>
