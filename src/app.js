@@ -1,26 +1,41 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { rateLimit } from 'express-rate-limit';
+import client from 'prom-client';
+import fs from 'fs';
+import swaggerUi from 'swagger-ui-express';
+
 import { httpLogger } from './middlewares/logger.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { metricsMiddleware } from './middlewares/metrics.middleware.js';
 import { NotFoundError } from './errors/index.js';
 
+import authRoutes from './routes/auth.routes.js';
 import equipmentRoutes from './routes/equipment.routes.js';
 import requestRoutes from './routes/request.routes.js';
 import siteRoutes from './routes/site.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import healthRoutes from './routes/health.routes.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
+app.use(metricsMiddleware);
 app.use(httpLogger);
 app.use(helmet());
+app.use(cookieParser());
 
 const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',');
-app.use(cors({ origin: (origin, cb) => {
-  if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-  else cb(new Error('CORS Error'));
-}}));
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
+    else cb(new Error('CORS Error'));
+  },
+  credentials: true
+}));
 
 app.use(rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
@@ -31,7 +46,20 @@ app.use(rateLimit({
 app.use(express.json({ limit: '100kb' }));
 app.use(express.static('public'));
 
-app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok', db: 'connected' }));
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
+
+try {
+  const openApiSpec = JSON.parse(fs.readFileSync(new URL('../docs/openapi.json', import.meta.url), 'utf-8'));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+} catch (e) {
+  // Обработка отсутствия файла до генерации документации
+}
+
+app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/sites', siteRoutes);
