@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-maintenance_db}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -16,18 +14,62 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: maintenance_api
+    restart: always
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${PORT:-3000}:3000"
     env_file: .env
     environment:
       DB_HOST: db
+      PORT: 3000
+    networks:
+      - app_network
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: maintenance_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: maintenance_grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
 
 volumes:
   pgdata:
+  grafanadata:
+
+networks:
+  app_network:
+    driver: bridge
