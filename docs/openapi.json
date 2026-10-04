@@ -1,0 +1,120 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Maintenance API Service",
+    "version": "1.0.0",
+    "description": "Сервис учета технического обслуживания оборудования с ролевой моделью доступа (RBAC)."
+  },
+  "servers": [{ "url": "/api" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "requestId": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Регистрация нового пользователя",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "email", "password"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Пользователь создан" }, "409": { "description": "Конфликт данных" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Вход в систему (выдача access-токена и refresh-cookie)",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["identifier", "password"],
+                "properties": {
+                  "identifier": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Успешный вход" }, "401": { "description": "Неверные учетные данные" } }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Профиль и роль текущего пользователя",
+        "responses": { "200": { "description": "Профиль пользователя" }, "401": { "description": "Не авторизован" } }
+      }
+    },
+    "/equipment": {
+      "get": {
+        "summary": "Список оборудования",
+        "responses": { "200": { "description": "Список с пагинацией" } }
+      },
+      "post": {
+        "summary": "Создание оборудования (admin only)",
+        "responses": { "201": { "description": "Оборудование создано" }, "403": { "description": "Доступ запрещен" } }
+      }
+    },
+    "/requests": {
+      "get": {
+        "summary": "Список заявок",
+        "responses": { "200": { "description": "Список заявок" } }
+      },
+      "post": {
+        "summary": "Создание заявки (technician, admin)",
+        "responses": { "201": { "description": "Заявка создана" } }
+      }
+    },
+    "/requests/{id}/status": {
+      "patch": {
+        "summary": "Смена статуса заявки (admin или назначенный technician)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Статус обновлен" }, "403": { "description": "Техник не назначен на заявку" }, "409": { "description": "Недопустимый переход" } }
+      }
+    },
+    "/reports/equipment-load": {
+      "get": {
+        "summary": "Аналитический отчет по нагрузке на оборудование",
+        "responses": { "200": { "description": "Сводная таблица" } }
+      }
+    }
+  }
+}
