@@ -1,7 +1,7 @@
 import sequelize, { MaintenanceRequest, RequestStatusHistory, RequestAssignee, Technician } from '../models/index.js';
 import { EquipmentService } from './equipment.service.js';
 import { RequestRepo } from '../repositories/request.repo.js';
-import { NotFoundError, ConflictError, ValidationError } from '../errors/index.js';
+import { NotFoundError, ConflictError, ValidationError, AppError } from '../errors/index.js';
 
 const STATUS_FLOW = {
   new: ['in_progress', 'rejected'],
@@ -25,15 +25,15 @@ export const RequestService = {
 
   getByEquipment: async (eqId) => await RequestRepo.findByEquipment(eqId),
 
-  create: async (data) => {
+  create: async (data, authorName = 'system') => {
     await EquipmentService.getById(data.equipmentId);
     return await sequelize.transaction(async (t) => {
-      const created = await RequestRepo.create(data, { transaction: t });
+      const created = await RequestRepo.create({ ...data, author: authorName }, { transaction: t });
       await RequestStatusHistory.create({
         requestId: created.id,
         fromStatus: null,
         toStatus: 'new',
-        changedBy: data.author || 'system',
+        changedBy: authorName,
         comment: 'Создание заявки'
       }, { transaction: t });
       return created;
@@ -45,7 +45,7 @@ export const RequestService = {
     return await RequestRepo.update(id, data);
   },
 
-  changeStatus: async (id, newStatus, user = 'operator', comment = '') => {
+  changeStatus: async (id, newStatus, user, comment = '') => {
     return await sequelize.transaction(async (t) => {
       const req = await MaintenanceRequest.findByPk(id, {
         lock: t.LOCK.UPDATE,
@@ -53,6 +53,17 @@ export const RequestService = {
       });
 
       if (!req) throw new NotFoundError('Заявка не найдена');
+
+      // Ограничение: техник меняет статус только своих заявок
+      if (user && user.role === 'technician') {
+        const isAssigned = await RequestAssignee.findOne({
+          where: { requestId: id, technicianId: user.technicianId },
+          transaction: t
+        });
+        if (!isAssigned) {
+          throw new AppError('Техник может изменять статус только тех заявок, на которые назначен', 403, 'FORBIDDEN');
+        }
+      }
 
       if (!STATUS_FLOW[req.status].includes(newStatus)) {
         throw new ConflictError(`Недопустимый переход статуса из ${req.status} в ${newStatus}`);
@@ -72,7 +83,7 @@ export const RequestService = {
         requestId: id,
         fromStatus: prevStatus,
         toStatus: newStatus,
-        changedBy: user,
+        changedBy: user ? user.username : 'system',
         comment
       }, { transaction: t });
 

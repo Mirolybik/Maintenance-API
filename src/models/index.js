@@ -1,5 +1,8 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
+import User from './user.model.js';
+
+export { User };
 
 export const Site = sequelize.define('Site', {
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -64,7 +67,7 @@ export const RequestAssignee = sequelize.define('RequestAssignee', {
   hours: { type: DataTypes.DOUBLE, defaultValue: 0 }
 }, { tableName: 'request_assignees', underscored: true });
 
-// Настройка связей
+// Ассоциации
 Site.hasMany(Equipment, { foreignKey: 'site_id', as: 'equipment' });
 Equipment.belongsTo(Site, { foreignKey: 'site_id', as: 'site' });
 
@@ -89,5 +92,8 @@ Technician.belongsToMany(MaintenanceRequest, {
   otherKey: 'request_id',
   as: 'requests'
 });
+
+User.belongsTo(Technician, { foreignKey: 'technician_id', as: 'technician' });
+Technician.hasOne(User, { foreignKey: 'technician_id', as: 'user' });
 
 export default sequelize;

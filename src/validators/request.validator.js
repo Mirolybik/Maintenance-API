@@ -22,7 +22,10 @@ export const updateRequestSchema = z.object({
 
 export const updateStatusSchema = z.object({
   params: z.object({ id: z.string().uuid() }),
-  body: z.object({ status: z.enum(['new', 'in_progress', 'done', 'rejected']) }).strict()
+  body: z.object({
+    status: z.enum(['new', 'in_progress', 'done', 'rejected']),
+    comment: z.string().max(500).optional()
+  }).strict()
 });
 
 export const getRequestSchema = z.object({
