@@ -1,0 +1,101 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Прикладные показатели обслуживания",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [] } },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
+      "pluginVersion": "10.4.0",
+      "targets": [{ "format": "table", "rawSql": "SELECT COUNT(*) as value FROM equipment;", "refId": "A" }],
+      "title": "Единиц оборудования на учете",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } } },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
+      "pluginVersion": "10.4.0",
+      "targets": [{ "format": "table", "rawSql": "SELECT COUNT(*) as value FROM maintenance_requests WHERE status IN ('new', 'in_progress');", "refId": "A" }],
+      "title": "Открытых заявок в работе",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } } },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
+      "pluginVersion": "10.4.0",
+      "targets": [{ "format": "table", "rawSql": "SELECT COALESCE(ROUND(AVG(EXTRACT(EPOCH FROM (h.created_at - r.created_at)) / 3600)::numeric, 1), 0) as value FROM maintenance_requests r JOIN request_status_history h ON h.request_id = r.id AND h.to_status = 'done';", "refId": "A" }],
+      "title": "Среднее время закрытия (часы)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "color": { "fixedColor": "red", "mode": "fixed" } } },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "values": false } },
+      "pluginVersion": "10.4.0",
+      "targets": [{ "format": "table", "rawSql": "SELECT COUNT(*) as value FROM maintenance_requests WHERE planned_at < NOW() AND status != 'done';", "refId": "A" }],
+      "title": "Просроченных плановых ТО",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 6 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "format": "table", "rawSql": "SELECT status, count(*) as count FROM maintenance_requests GROUP BY status;", "refId": "A" }],
+      "title": "Распределение заявок по статусам",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 6 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "format": "table", "rawSql": "SELECT priority, count(*) as count FROM maintenance_requests GROUP BY priority;", "refId": "A" }],
+      "title": "Заявки по приоритетам",
+      "type": "barchart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "id": 8,
+      "title": "Нагрузка на оборудование и журнал активности",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "id": 9,
+      "options": { "showHeader": true },
+      "targets": [{ "format": "table", "rawSql": "SELECT e.name as \"Оборудование\", e.serial_number as \"Серийный №\", COUNT(r.id) as \"Всего заявок\", COUNT(CASE WHEN r.status = 'done' THEN 1 END) as \"Закрыто\", COALESCE(SUM(ra.hours), 0) as \"Трудозатраты (ч)\" FROM equipment e LEFT JOIN maintenance_requests r ON r.equipment_id = e.id LEFT JOIN request_assignees ra ON ra.request_id = r.id GROUP BY e.id, e.name, e.serial_number ORDER BY \"Всего заявок\" DESC;", "refId": "A" }],
+      "title": "Сводный отчет по загрузке парка оборудования",
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["windpark", "maintenance"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Мониторинг ветропарка (Production Dashboard)",
+  "uid": "maintenance-main-dash"
+}
