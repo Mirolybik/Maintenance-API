@@ -8,7 +8,8 @@ module.exports = {
     host: process.env.DB_HOST || '127.0.0.1',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
-    logging: false
+    logging: false,
+    seederStorage: 'sequelize'
   },
   production: {
     username: process.env.DB_USER,
@@ -18,6 +19,7 @@ module.exports = {
     port: parseInt(process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
     logging: false,
+    seederStorage: 'sequelize',
     pool: {
       max: parseInt(process.env.DB_POOL_MAX || '10', 10),
       min: parseInt(process.env.DB_POOL_MIN || '2', 10),
