@@ -1,11 +1,23 @@
-# --- Этап 1: Подготовка продакшн-зависимостей ---
+# --- Этап 1: продакшн-зависимости ---
 FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
-# --- Этап 2: Финальный минимальный образ ---
+# --- Этап 2: мигратор (нужен sequelize-cli из devDependencies) ---
+FROM node:20-alpine AS migrator
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm ci
+COPY src ./src
+
+USER node
+CMD ["sh", "-c", "npm run db:migrate && npm run db:seed"]
+
+# --- Этап 3: финальный минимальный образ (последний этап = цель по умолчанию) ---
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
@@ -13,7 +25,6 @@ ENV NODE_ENV=production
 COPY package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY src ./src
-COPY public ./public
 COPY docs ./docs
 
 # Запуск процесса от непривилегированного пользователя node
