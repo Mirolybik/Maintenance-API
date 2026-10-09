@@ -17,6 +17,24 @@ services:
     networks:
       - app_network
 
+  # Одноразовый шаг: миграции + сиды (воспроизводимо, повторный запуск безопасен)
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    container_name: maintenance_migrate
+    env_file: .env
+    environment:
+      DB_HOST: db
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - app_network
+
   api:
     build:
       context: .
@@ -24,12 +42,19 @@ services:
     container_name: maintenance_api
     restart: always
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file: .env
     environment:
       DB_HOST: db
       PORT: 3000
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - app_network
 
@@ -42,7 +67,21 @@ services:
     volumes:
       - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: maintenance_prometheus
+    restart: always
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    depends_on:
+      api:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -51,11 +90,14 @@ services:
     container_name: maintenance_grafana
     restart: always
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-maintenance_db}
     volumes:
       - grafanadata:/var/lib/grafana
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning
@@ -63,12 +105,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      prometheus:
+        condition: service_started
     networks:
       - app_network
 
 volumes:
   pgdata:
   grafanadata:
+  promdata:
 
 networks:
   app_network:

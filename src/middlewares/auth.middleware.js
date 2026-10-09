@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { AppError } from '../errors/index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secure-production-jwt-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET не задан в переменных окружения');
 
 export const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

@@ -3,8 +3,11 @@ import jwt from 'jsonwebtoken';
 import { UserRepo } from '../repositories/user.repo.js';
 import { AppError, ConflictError } from '../errors/index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secure-production-jwt-secret-key-2026';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'super-secure-production-refresh-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+  throw new Error('JWT_SECRET и JWT_REFRESH_SECRET должны быть заданы в переменных окружения');
+}
 const ACCESS_EXPIRES = process.env.JWT_EXPIRES_IN || '15m';
 const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 

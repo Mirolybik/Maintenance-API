@@ -13,7 +13,8 @@
     "db:migrate": "sequelize-cli db:migrate --config src/config/database.cjs --migrations-path src/migrations",
     "db:migrate:undo": "sequelize-cli db:migrate:undo:all --config src/config/database.cjs --migrations-path src/migrations",
     "db:seed": "sequelize-cli db:seed:all --config src/config/database.cjs --seeders-path src/seeders",
-    "db:seed:undo": "sequelize-cli db:seed:undo:all --config src/config/database.cjs --seeders-path src/seeders"
+    "db:seed:undo": "sequelize-cli db:seed:undo:all --config src/config/database.cjs --seeders-path src/seeders",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -43,6 +44,16 @@
   },
   "jest": {
     "transform": {},
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/tests/setup-env.cjs"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "coverageReporters": [
+      "text-summary",
+      "lcov"
+    ]
   }
 }

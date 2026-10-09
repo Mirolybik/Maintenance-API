@@ -2,7 +2,9 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 import crypto from 'crypto';
 
-export const logger = pino({ level: process.env.NODE_ENV === 'production' ? 'info' : 'debug' });
+export const logger = pino({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug')
+});
 
 export const httpLogger = pinoHttp({
   logger,
