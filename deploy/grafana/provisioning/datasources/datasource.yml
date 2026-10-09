@@ -1,17 +1,25 @@
 apiVersion: 1
 datasources:
   - name: PostgreSQL
+    uid: PostgreSQL
     type: postgres
     access: proxy
     url: db:5432
-    user: ${DB_USER:-postgres}
+    user: $DB_USER
     secureJsonData:
-      password: ${DB_PASSWORD:-postgres}
+      password: $DB_PASSWORD
     jsonData:
-      database: ${DB_NAME:-maintenance_db}
+      database: $DB_NAME
       sslmode: disable
       maxOpenConns: 5
       maxIdleConns: 2
       connMaxLifetime: 14400
       postgresVersion: 1600
     isDefault: true
+
+  - name: Prometheus
+    uid: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: false
