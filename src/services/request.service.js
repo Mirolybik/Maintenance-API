@@ -3,7 +3,7 @@ import { EquipmentService } from './equipment.service.js';
 import { RequestRepo } from '../repositories/request.repo.js';
 import { NotFoundError, ConflictError, ValidationError, AppError } from '../errors/index.js';
 
-const STATUS_FLOW = {
+export const STATUS_FLOW = {
   new: ['in_progress', 'rejected'],
   in_progress: ['done', 'rejected'],
   done: [],
